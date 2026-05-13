@@ -1,0 +1,61 @@
+{
+  "repo": "hermes-agent",
+  "date": "2026-05-12",
+  "dirty_state": "pre-existing .gitignore modification observed",
+  "candidate_count": 5,
+  "blockers": [
+    "llm-tldr tree ran too long and was killed; fd/rg and repo-local docs were used as fallback"
+  ],
+  "candidates": [
+    {
+      "id": "hermes-agent-1",
+      "title": "Extract a Turn Runtime module from AIAgent",
+      "files": ["run_agent.py"],
+      "problem": "AIAgent owns the conversation loop, response normalization, tool batch policy, budget handling, interrupt behavior, compression hooks, and persistence. The Module is deep in behavior but shallow as an Interface because many runtime policies share one large Implementation.",
+      "solution": "Introduce a Turn Runtime module with explicit turn inputs, step outcomes, tool-batch events, budget decisions, and finalization results while leaving model/provider details behind existing adapters.",
+      "benefits": "Locality improves for agent-loop changes. Leverage improves because CLI, gateway, and future hosted runners can reason about the same turn-state Interface.",
+      "test_impact": "Focused turn-state tests can cover interrupt, tool-call, retry, and finalization paths without booting the whole CLI.",
+      "risk": "Medium/high because the current loop is behaviorally central."
+    },
+    {
+      "id": "hermes-agent-2",
+      "title": "Deepen the Tool Invocation Pipeline",
+      "files": ["model_tools.py", "tools/registry.py"],
+      "problem": "tools/registry.py provides a useful registry, but model_tools.py still mixes discovery, schema shaping, argument coercion, plugin hooks, dispatch, and result normalization. Tool invocation has several phases but no single pipeline Interface.",
+      "solution": "Create a Tool Invocation Pipeline module with named phases: discover, expose schema, coerce args, authorize/plugin hook, dispatch, normalize result, and record telemetry.",
+      "benefits": "Locality improves for tool behavior. Leverage improves for adding tools, plugins, and alternate frontends without re-implementing coercion and result handling.",
+      "test_impact": "Phase-level contract tests can validate schema post-processing and dispatch outcomes.",
+      "risk": "Medium."
+    },
+    {
+      "id": "hermes-agent-3",
+      "title": "Define a Command Surface Adapter contract",
+      "files": ["hermes_cli/commands.py", "gateway/run.py", "tui_gateway/server.py"],
+      "problem": "The slash command registry is centralized, but command behavior is still surfaced through CLI, gateway, and TUI paths with separate handler glue. The command Interface is partly registry data and partly frontend-specific Implementation.",
+      "solution": "Add a command execution Adapter contract that takes command input, context, permissions, and output channel, then returns a typed command result usable by CLI, gateway, and TUI.",
+      "benefits": "Locality improves for adding or changing commands. Leverage improves because every surface can share help, validation, execution, and error semantics.",
+      "test_impact": "Command contract tests can run each registered command against fake contexts.",
+      "risk": "Medium."
+    },
+    {
+      "id": "hermes-agent-4",
+      "title": "Split Gateway Session Runtime from platform adapters",
+      "files": ["gateway/run.py"],
+      "problem": "gateway/run.py combines config/environment bridging, process guards, agent cache, platform lifecycle, message routing, cron ticking, and long-running session control. The Gateway Session Runtime is shallow because external platforms and runtime policy are interleaved.",
+      "solution": "Create a Gateway Session Runtime module that owns session lifecycle, routing decisions, and run state, with platform adapters for Discord/Slack/cron or future transports.",
+      "benefits": "Locality improves for gateway bugs. Leverage improves for adding a transport without altering core session policy.",
+      "test_impact": "Session lifecycle tests can run without live platform dependencies.",
+      "risk": "Medium/high due to integration surface."
+    },
+    {
+      "id": "hermes-agent-5",
+      "title": "Introduce a TUI RPC Session Registry module",
+      "files": ["tui_gateway/server.py"],
+      "problem": "tui_gateway/server.py owns global sessions, slash-worker plumbing, config cache, prompt blocking, JSON-RPC methods, and long-handler execution. Session state is an Implementation detail of the server rather than a reusable Module.",
+      "solution": "Move session creation, lookup, prompt-blocking state, and lifecycle events into a TUI RPC Session Registry with a small Interface used by JSON-RPC handlers.",
+      "benefits": "Locality improves for TUI session behavior. Leverage improves for tests and any alternate RPC transport.",
+      "test_impact": "Registry tests can cover concurrent session access and cleanup behavior.",
+      "risk": "Medium."
+    }
+  ]
+}
