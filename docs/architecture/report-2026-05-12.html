@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hermes Agent Architecture Review - 2026-05-12</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 2rem auto; max-width: 920px; color: #1f2933; }
+    h1, h2 { line-height: 1.2; }
+    .note { padding: 0.75rem 1rem; background: #fff7ed; border-left: 4px solid #f97316; }
+    .meta { color: #52606d; }
+    li { margin-bottom: 0.8rem; }
+    code { background: #f3f4f6; padding: 0.1rem 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Hermes Agent Architecture Review</h1>
+  <p class="meta">Date: 2026-05-12. Scope: docs-only Phase 1 review.</p>
+  <p class="note"><strong>Do not implement yet.</strong> These findings are candidates for later Linear issue creation and should be reviewed before execution.</p>
+
+  <h2>Context Read</h2>
+  <p>Repo-local instructions describe Hermes as a multi-surface agent runtime with CLI, gateway, TUI, tool registry, model-tool orchestration, and platform adapters. Exploration covered <code>AGENTS.md</code>, <code>README.md</code>, <code>run_agent.py</code>, <code>model_tools.py</code>, <code>tools/registry.py</code>, <code>hermes_cli/commands.py</code>, <code>gateway/run.py</code>, and <code>tui_gateway/server.py</code>.</p>
+
+  <h2>Top Architecture Candidates</h2>
+  <ol>
+    <li><strong>Extract a Turn Runtime module from AIAgent.</strong> <code>run_agent.py</code> mixes request preparation, model response handling, tool batch policy, budget decisions, interrupts, compression, and persistence. A typed turn-state Interface would deepen this Module and improve Locality around agent-loop behavior.</li>
+    <li><strong>Deepen the Tool Invocation Pipeline.</strong> <code>model_tools.py</code> owns discovery, schema shaping, argument coercion, plugin hooks, dispatch, and result normalization. A phased invocation pipeline would provide a clearer Interface over the existing registry Implementation.</li>
+    <li><strong>Define a Command Surface Adapter contract.</strong> Slash command data is centralized, but CLI, gateway, and TUI execution still have separate glue. A command Adapter contract would let each surface share validation, execution, help, and error semantics.</li>
+    <li><strong>Split Gateway Session Runtime from platform adapters.</strong> <code>gateway/run.py</code> combines config/env bridging, session state, platform lifecycle, routing, cron, and agent cache concerns. A Gateway Session Runtime Module would keep transport adapters shallow.</li>
+    <li><strong>Introduce a TUI RPC Session Registry module.</strong> <code>tui_gateway/server.py</code> owns global sessions, long handlers, prompt blockers, config cache, and JSON-RPC methods. A session registry would make the session Interface explicit and testable.</li>
+  </ol>
+
+  <h2>Blockers And Notes</h2>
+  <p>Pre-existing dirty state: <code>.gitignore</code> was modified before this review. <code>llm-tldr tree</code> ran too long and was killed; compact fallback exploration used <code>fd</code>, <code>rg</code>, and targeted reads.</p>
+</body>
+</html>
